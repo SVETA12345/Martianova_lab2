@@ -1,2 +1,2 @@
-station: st,1,1,1
-pipe: pipe y,1.000000,1.000000,0
+station: tb 111,10,10,1
+pipe: fds,1.000000,1.000000,1
