@@ -1,2 +1,4 @@
-station: tb 111,10,10,1
-pipe: fds,1.000000,1.000000,1
+station: 3;33;3;3;3
+station: 2;2;22;2;2
+station: 4;4;4;44;1
+station: 1;1;1;1;0
