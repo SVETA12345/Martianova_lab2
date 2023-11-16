@@ -56,7 +56,7 @@ istream& operator >> (istream& in, Station& station){
         in.ignore(10000, '\n');
         cout << "Number of workshops in operation: ";
         in >> station.countWork;
-    } while (in.fail());
+    } while (in.fail() || station.countWork>station.countAll);
     do
     {
         in.clear();
