@@ -1,8 +1,10 @@
+#pragma once
 #include "Pipe.h"
 #include <iostream>
-#pragma once
 #include <string>
+#include "samples.h"
 using namespace std;
+
 int Pipe::MaxId=0;
 Pipe::Pipe()
 {
@@ -19,9 +21,6 @@ int Pipe::GetChangeId(){
 int Pipe::GetId(){
     return id;
 }
-void Pipe::GetReplaceId(int id){
-    this->id=id;
-}
 //вывод в консоль трубы
 ostream& operator << (ostream& out, const Pipe& p){
     out << "Pipe" << endl;
@@ -35,38 +34,45 @@ ostream& operator << (ostream& out, const Pipe& p){
 
 // оперотор ввода трубы
 istream& operator >> (istream& in, Pipe& pipe){
-    do
-    {
-        // очищает флаг ошибки
-        in.clear();
-        // переходит к следующей новой строке
-        in.ignore(10000, '\n');
-        cout << "Type name: ";
-        getline(in, pipe.name);
-    } while (pipe.name == "");
-    do
-    {
-        if (in.fail())
-        {
-            in.clear();
-            in.ignore(10000, '\n');
-        }
-        cout << "Type length: ";
-        in >> pipe.length;
-    } while (in.fail() || pipe.length < 0);
-    do
-    {
-        in.clear();
-        in.ignore(10000, '\n');
-        cout << "Type diameter: ";
-        in >> pipe.diameter;
-    } while (in.fail() || pipe.diameter < 0);
-    do
-    {
-        in.clear();
-        in.ignore(10000, '\n');
-        cout << "Type in repair (1=in repair, 0=not in repair): ";
-        in >> pipe.isRepair;
-    } while (in.fail());
+    cout << "Type name: ";
+	pipe.name = get_str();
+	cout << "Type length: ";
+	pipe.length = get_correct_value<double>(1, INT_MAX);
+	cout << "Type diameter: ";
+	pipe.diameter = get_correct_value<double>(1, INT_MAX);
+	cout << "Type in repair (1=in repair, 0=not in repair): ";
+	pipe.isRepair = get_correct_value<bool>(0, 1);
     return in;
+}
+
+void Pipe::download(ifstream& read) {
+	if (read.is_open()) {
+		read >> id;
+        MaxId=max(MaxId, id);
+	    getline(read>>ws, name);
+		read >> length;
+		read >> diameter;
+		read >> isRepair;
+
+	}
+	else {
+		cout << "Îøèáêà!";
+	}
+}
+void Pipe::SavePipe(ofstream& out) {
+	if (out.is_open()) {
+		out << "pipe" << '\n';
+		out << id << '\n';
+		out << name << '\n';
+		out << length << '\n';
+		out << diameter << '\n';
+		out << isRepair << '\n';
+	}
+	else {
+		cout << "Îøèáêà!";
+	}
+}
+
+string Pipe::GetName(){
+    return name;
 }

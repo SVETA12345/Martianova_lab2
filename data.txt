@@ -1,2 +1,18 @@
-station: 1;1;1;1;0
-pipe: 1;1.000000;1.000000;0;0
+pipe
+1
+gjhbhh
+2
+1
+1
+pipe
+0
+tube 1
+7
+7
+0
+station
+0
+hughbhj
+6
+10
+1

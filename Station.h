@@ -7,17 +7,18 @@ using namespace std;
 class Station
 {
     int id;
-public:
     static int MaxId;
+    
+public:
+    double effect;
     string name;
     int countAll;
     int countWork;
-    string effect;
-
    Station();
    int GetChangeId();
    int GetId();
-   void GetReplaceId(int id);
+   void SaveStation(ofstream &fout);
+   void download(ifstream& read);
   /// ~Station();
     friend ostream& operator <<(ostream& out, const Station& s);
     friend istream& operator >>(istream& in, const Station& s);
