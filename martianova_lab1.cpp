@@ -8,12 +8,18 @@
 #include "Station.h"
 #include "Station.cpp"
 #include <unordered_map>
+#include "Graph.h"
+#include "Graph.cpp"
 #include "Pipe.h"
 #include "Pipe.cpp"
 #include "logging.h"
+#include <set>
+#include <algorithm>
 using namespace std;
 typedef unordered_map<int, Station> MapStation;
 typedef unordered_map<int, Pipe> MapPipe;
+typedef unordered_map<int, vector<int>> MapGraph;
+
 
 template <typename type>
 bool CheckID(const unordered_map<int, type>& items, int id) {
@@ -30,8 +36,14 @@ int CorrectIntID() {
 	cerr << id << endl;
 	return id;
 }
-
-
+//топологическая сортировка
+void dfs(vector<vector<int>> &graph, int v, vector<int> &visited, vector<int> &order){
+    visited[v]=1;
+    for (int to: graph[v])
+    if(visited[to]==0)
+    dfs(graph, to, visited, order);
+    order.push_back(v);
+};
 // редактирование трубы
 void EditPipe(MapPipe &AllPipe)
 {
@@ -207,20 +219,26 @@ void PrintMenu()
          << "Filter stations of percentage non-operational workshops: 13" << endl
          << "Batch pipes delete: 14" << endl
          << "Batch pipes based on the need for repair: 15" << endl
+        << "Add graph: 16" << endl
+        << "Topological sorted: 17" << endl
          << "Exit: 0" << endl;
 };
 
 int main()
 {
     
+    MapGraph GraphFull;
     MapStation AllStation;
     MapPipe AllPipe;
     Station station;
     Pipe pipe;
     bool isStation = false;
     bool isPipe = false;
+    int maxIdGraph=0;
     redirect_output_wrapper cerr_out(cerr);
     ofstream logfile("log.txt");
+    int edgeCount=0;
+    set<int> vertexs;
 	if (logfile)
 		cerr_out.redirect(logfile);
     while (1)
@@ -236,7 +254,7 @@ int main()
             }
             cin>>i;
             cerr << i<<endl;
-        } while (cin.fail() || i > 15);
+        } while (cin.fail() || i > 17);
         switch (i)
         {
         case 1:
@@ -305,7 +323,7 @@ int main()
                 cin>>nameFile;
                 cerr<<nameFile;
             
-			ofstream out(nameFile);
+			ofstream out(nameFile+".txt");
 			for (auto const& p : AllPipe) {
 				if (!p.second.name.empty()) {
 					AllPipe[p.first].SavePipe(out);
@@ -315,6 +333,11 @@ int main()
 				if (!k.second.name.empty()) {
 					AllStation[k.first].SaveStation(out);
 				}
+			}
+            out << "graph" << '\n';
+            out<<edgeCount<<'\n';
+            for (auto & k : GraphFull) {
+				out << k.first<<" "<<k.second[0]<<" "<<k.second[1] << '\n';
 			}
 			break;
         }
@@ -340,6 +363,17 @@ int main()
 						read_ks.download(read);
 						AllStation.insert({ read_ks.GetId(), read_ks });
 					}
+                    if (Name=="graph"){
+                        int idPipe, idLogin, idExit;
+                        read>>edgeCount;
+                        for (int v=0; v<edgeCount;v++){
+                            read>>idPipe>>idLogin>>idExit;
+                            vector<int> listId;
+                            listId.push_back(idLogin);
+                            listId.push_back(idExit);
+                            GraphFull[idPipe]=listId;
+                        }
+                    }
 				}
 			}
 			break;
@@ -389,6 +423,7 @@ int main()
             {
                 cout << "Такой трубы не существует" << endl;
             }
+
             else
             {
                 for (auto &i : FilterIsRepairPipe)
@@ -495,6 +530,56 @@ int main()
             }
             break;
         }
+        case 16:
+        {
+            cout << "Login id station: ";
+            int idLogin = get_correct_value<int>(-1, INT_MAX);
+            cout << "Exit id station: ";
+            int idExit = get_correct_value<int>(-1, INT_MAX);
+            cout << "Pipe id: ";
+            int idPipe = get_correct_value<int>(-1, INT_MAX);
+            
+            if (CheckID(AllStation,idLogin) && CheckID(AllStation,idExit)){
+                double diameter=AllPipe[idPipe].GetDiameter();
+                if (CheckID(AllPipe,idPipe) &&(diameter==500 || diameter==700 || diameter==1000 || diameter==1400) && !CheckID(GraphFull,idPipe)){
+                            vector<int> listId;
+                            listId.push_back(idLogin);
+                            listId.push_back(idExit);
+                            GraphFull[idPipe]=listId;
+                            maxIdGraph=max(idLogin, idExit);
+                            edgeCount+=1;
+                            vertexs.insert(idLogin);
+                            vertexs.insert(idExit);
+                    }
+                
+                else{
+                    cin >> pipe;
+                    int id = pipe.GetChangeId();
+                    AllPipe[id] = pipe;
+                    isPipe = true;
+                }
+            }
+            break;
+        }
+        case 17:
+        {
+            vector<vector<int>> graph(maxIdGraph);
+            for (auto &i : GraphFull)  
+                    {
+                        vector<int> listId;
+                        listId=GraphFull[i.first];
+                        graph[listId[0]].push_back(listId[1]);
+                    }
+            vector<int> visited(vertexs.size());
+            vector<int> order;
+            reverse(order.begin(), order.end());
+            for (int v=0; v<vertexs.size(); v++){
+                if (!visited[v])
+                    dfs(graph, v, visited, order);
+            }
+            
+            break;
+        }
         case 0:
         {
             return 0;
@@ -518,3 +603,7 @@ int main()
 //https://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
 //https://metanit.com/cpp/tutorial/8.3.php
 //http://cppstudio.com/post/816/
+
+//https://habr.com/ru/articles/100953/
+//https://habr.com/ru/articles/495444/
+//https://habr.com/ru/companies/otus/articles/499138/

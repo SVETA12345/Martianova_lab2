@@ -14,6 +14,7 @@ class Pipe
         Pipe();
         int GetChangeId();
         int GetId();
+        double GetDiameter();
         string GetName();
         void download(ifstream& read);
   /// ~Station();

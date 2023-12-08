@@ -21,6 +21,9 @@ int Pipe::GetChangeId(){
 int Pipe::GetId(){
     return id;
 }
+double Pipe::GetDiameter(){
+    return diameter;
+}
 //вывод в консоль трубы
 ostream& operator << (ostream& out, const Pipe& p){
     out << "Pipe" << endl;
@@ -56,7 +59,7 @@ void Pipe::download(ifstream& read) {
 
 	}
 	else {
-		cout << "Îøèáêà!";
+		cout << "Ошибка";
 	}
 }
 void Pipe::SavePipe(ofstream& out) {
@@ -69,7 +72,7 @@ void Pipe::SavePipe(ofstream& out) {
 		out << isRepair << '\n';
 	}
 	else {
-		cout << "Îøèáêà!";
+		cout << "Ошибка";
 	}
 }
 
