@@ -7,18 +7,21 @@
 #include "Pipe.h"
 #include "Station.h"
 #include "Station.cpp"
+//#include "Network.h"
+//#include "Network.cpp"
 #include <unordered_map>
 #include "Graph.h"
 #include "Graph.cpp"
 #include "Pipe.h"
 #include "Pipe.cpp"
 #include "logging.h"
-#include <set>
 #include <algorithm>
 using namespace std;
 typedef unordered_map<int, Station> MapStation;
 typedef unordered_map<int, Pipe> MapPipe;
 typedef unordered_map<int, vector<int>> MapGraph;
+typedef unordered_map<int, Station> MapStation;
+typedef unordered_map<int, Pipe> MapPipe;
 
 
 template <typename type>
@@ -36,14 +39,7 @@ int CorrectIntID() {
 	cerr << id << endl;
 	return id;
 }
-//топологическая сортировка
-void dfs(vector<vector<int>> &graph, int v, vector<int> &visited, vector<int> &order){
-    visited[v]=1;
-    for (int to: graph[v])
-    if(visited[to]==0)
-    dfs(graph, to, visited, order);
-    order.push_back(v);
-};
+
 // редактирование трубы
 void EditPipe(MapPipe &AllPipe)
 {
@@ -93,7 +89,6 @@ void EditStation(MapStation &AllStation)
     if (CheckID(AllStation, id)){
         cout << "Number of workshops in operation: ";
         cin >> countWork;
-        cerr << countWork;
         if(countWork <= AllStation[id].countAll){
             AllStation[id].countWork=countWork;
         }
@@ -101,14 +96,23 @@ void EditStation(MapStation &AllStation)
 };
 
 // удаление станции
-void DeleteStation(MapStation &AllStation)
+void DeleteStation(MapStation &AllStation, MapGraph &GraphFull)
 {
     int id;
     id=CorrectIntID();
+    vector<int> listId;
     if (CheckID(AllStation, id)){
         AllStation.erase(id);
+        for (auto &i : GraphFull)
+                {
+                    if (i.second.at(0)==id || i.second.at(1)==id){
+                        listId.push_back(i.first);
+                    }
+                }
     }
-    
+    for(int n : listId){
+        GraphFull.erase(n);
+    }
 };
 // фильтрация станции по имени
 unordered_map<int, Station> FindStationByName(MapStation AllStation, string name = "Unknow")
@@ -168,12 +172,22 @@ unordered_map<int, Pipe> FindPipeByName(MapPipe AllPipe, string name)
     return res;
 }
 // удаление трубы
-void DeletePipe(MapPipe &AllPipe)
+void DeletePipe(MapPipe &AllPipe, MapGraph &GraphFull)
 {
     int id;
     id=CorrectIntID();
+    vector<int> listId;
     if (CheckID(AllPipe, id)){
         AllPipe.erase(id);
+        for (auto &i : GraphFull)
+                {
+                    if (i.first==id){
+                        listId.push_back(i.first);
+                    }
+                }
+    }
+    for(int n : listId){
+        GraphFull.erase(n);
     }
 };
 
@@ -228,17 +242,16 @@ int main()
 {
     
     MapGraph GraphFull;
-    MapStation AllStation;
     MapPipe AllPipe;
+    MapStation AllStation;
     Station station;
     Pipe pipe;
+    //Network network;
     bool isStation = false;
     bool isPipe = false;
     int maxIdGraph=0;
     redirect_output_wrapper cerr_out(cerr);
     ofstream logfile("log.txt");
-    int edgeCount=0;
-    set<int> vertexs;
 	if (logfile)
 		cerr_out.redirect(logfile);
     while (1)
@@ -290,6 +303,14 @@ int main()
                     cout << i.second;
                 }
             }
+            if (GraphFull.size() > 0)
+            {
+                cout << "Graph"<<endl;
+                for (auto &i : GraphFull)
+                {
+                    cout <<i.first<<": "<<i.second[0]<<" "<<i.second[1]<<endl;
+                }
+            }
             break;
         }
         case 4:
@@ -335,7 +356,7 @@ int main()
 				}
 			}
             out << "graph" << '\n';
-            out<<edgeCount<<'\n';
+            out<<GraphFull.size()<<'\n';
             for (auto & k : GraphFull) {
 				out << k.first<<" "<<k.second[0]<<" "<<k.second[1] << '\n';
 			}
@@ -365,12 +386,14 @@ int main()
 					}
                     if (Name=="graph"){
                         int idPipe, idLogin, idExit;
+                        int edgeCount;
                         read>>edgeCount;
                         for (int v=0; v<edgeCount;v++){
                             read>>idPipe>>idLogin>>idExit;
                             vector<int> listId;
                             listId.push_back(idLogin);
                             listId.push_back(idExit);
+                            maxIdGraph=max({idLogin, idExit, maxIdGraph});
                             GraphFull[idPipe]=listId;
                         }
                     }
@@ -380,12 +403,12 @@ int main()
         }
         case 8:
         {
-            DeleteStation(AllStation);
+            DeleteStation(AllStation,GraphFull);
             break;
         }
         case 9:
         {
-            DeletePipe(AllPipe);
+            DeletePipe(AllPipe, GraphFull);
             break;
         }
         case 10:
@@ -546,10 +569,8 @@ int main()
                             listId.push_back(idLogin);
                             listId.push_back(idExit);
                             GraphFull[idPipe]=listId;
-                            maxIdGraph=max(idLogin, idExit);
-                            edgeCount+=1;
-                            vertexs.insert(idLogin);
-                            vertexs.insert(idExit);
+                            maxIdGraph=max({idLogin, idExit, maxIdGraph});
+
                     }
                 
                 else{
@@ -563,21 +584,13 @@ int main()
         }
         case 17:
         {
-            vector<vector<int>> graph(maxIdGraph);
-            for (auto &i : GraphFull)  
-                    {
-                        vector<int> listId;
-                        listId=GraphFull[i.first];
-                        graph[listId[0]].push_back(listId[1]);
-                    }
-            vector<int> visited(vertexs.size());
-            vector<int> order;
-            reverse(order.begin(), order.end());
-            for (int v=0; v<vertexs.size(); v++){
-                if (!visited[v])
-                    dfs(graph, v, visited, order);
-            }
-            
+            Graph g = Graph(maxIdGraph+1);
+            for (auto &i : GraphFull)
+                {
+                    g.addEdge(i.second.at(0), i.second.at(1));
+                }
+            cout << "Following is a Topological Sort of the given graph \n";
+            g.topologicalSort();
             break;
         }
         case 0:

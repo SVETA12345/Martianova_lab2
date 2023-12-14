@@ -57,4 +57,5 @@ void Graph::topologicalSort()
         cout << Stack.top() << " ";
         Stack.pop();
     }
+    cout <<endl;
 }
